@@ -27,14 +27,13 @@ class MyDataset(Data.Dataset):
 
         if x.shape[0] == y.shape[0]:
             total_count = x.shape[0]
+            if number != 0:
+                picked = np.random.choice(list(range(total_count)), size=number, replace=False)
+                self.seeds = picked
+                x = x[picked]
+                y = y[picked]
         else:
             print(x.shape, y.shape, "lengths not equal!")
-
-        if number != 0:
-            picked = np.random.choice(list(range(total_count)), size=number, replace=False)
-            self.seeds = picked
-            x = x[picked]
-            y = y[picked]
 
         return {'x': x, 'y': y}
 
@@ -73,8 +72,10 @@ class Trainer:
         self.predicts = None
         self.groundtruth = None
         self.total_epochs = 0
+        self.y_type = None
         self.__gen_train_loss__()
         self.__gen_test_loss__()
+        self.__gen_y_type__()
 
     def __gen_train_loss__(self):
         self.train_loss = []
@@ -87,9 +88,14 @@ class Trainer:
         self.estimates = []
         self.predicts = []
         self.groundtruth = []
+        
+    def __gen_y_type__(self):
+        if isinstance(self.args.criterion, nn.CrossEntropyLoss):
+            self.y_type = torch.long
+        else:
+            self.y_type = torch.float32
 
     def train_and_eval(self, autosave=False, notion=''):
-        y_type = torch.long if isinstance(self.args.criterion, nn.CrossEntropyLoss) else torch.float32
         start = time.time()
 
         for epoch in range(self.args.epochs):
@@ -97,7 +103,7 @@ class Trainer:
             train_epoch_loss = []
             for idx, (data_x, data_y) in enumerate(self.train_loader, 0):
                 data_x = data_x.to(torch.float32).to(self.args.device)
-                data_y = data_y.to(y_type).to(self.args.device)
+                data_y = data_y.to(self.y_type).to(self.args.device)
                 self.optimizer.zero_grad()
                 outputs = self.model(data_x)
                 loss = self.args.criterion(outputs, data_y)
@@ -167,13 +173,13 @@ class Trainer:
         self.model.eval()
         for idx, (data_x, data_y) in enumerate(self.test_loader, 0):
             data_x = data_x.to(torch.float32).to(self.args.device)
-            data_y = data_y.to(torch.y_type).to(self.args.device)
+            data_y = data_y.to(self.y_type).to(self.args.device)
             outputs = self.model(data_x)
-            loss = self.args.criterion(outputs,data_y)
+            loss = self.args.criterion(outputs, data_y)
             self.estimates.append(outputs.cpu().detach().numpy().squeeze().tolist())
             self.groundtruth.append(data_y.cpu().detach().numpy().squeeze().tolist())
             self.test_loss.append(loss.item())
-            if idx%(len(self.test_loader)//5) == 0:
+            if idx % (len(self.test_loader)//5) == 0:
                 print("\r{}/{}of test, loss={}".format(idx, len(self.test_loader), loss.item()), end='')
 
         self.predicts = [np.argmax(row) for row in self.estimates]
