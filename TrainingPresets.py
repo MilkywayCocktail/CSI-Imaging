@@ -1,10 +1,10 @@
-# My Dataset
 import torch
 import torch.nn as nn
 import torch.utils.data as Data
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 import time
+
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
@@ -170,6 +170,7 @@ class Trainer:
         plt.show()
 
     def test(self):
+        self.__gen_test_loss__()
         self.model.eval()
         for idx, (data_x, data_y) in enumerate(self.test_loader, 0):
             data_x = data_x.to(torch.float32).to(self.args.device)
@@ -182,9 +183,15 @@ class Trainer:
             if idx % (len(self.test_loader)//5) == 0:
                 print("\r{}/{}of test, loss={}".format(idx, len(self.test_loader), loss.item()), end='')
 
-        self.predicts = [np.argmax(row) for row in self.estimates]
+    def plot_test_results(self):
+        pass
+
+
+class TrainerClassifier(Trainer):
 
     def plot_test_results(self):
+        self.predicts = [np.argmax(row) for row in self.estimates]
+        plt.clf()
         sns.set()
         f, ax = plt.subplots()
         cf = confusion_matrix(self.groundtruth, self.predicts)
@@ -194,4 +201,33 @@ class Trainer:
         ax.set_title('Confusion Matrix')
         ax.set_xlabel('Predicted')
         ax.set_ylabel('True')
+        plt.show()
+
+
+class TrainerGenImage(Trainer):
+
+    def plot_test_results(self):
+
+        imgs = np.random.choice(list(range(len(self.groundtruth))), 8)
+
+        fig = plt.figure(constrained_layout=True)
+        fig.suptitle('Estimation Results')
+
+        subfigs = fig.subfigures(nrows=2, ncols=1)
+        subfigs[0].suptitle('Ground Truth')
+        ax = subfigs[0].subplots(nrows=1, ncols=8)
+        for a in range(len(ax)):
+            ax[a].imshow(self.groundtruth[imgs[a]])
+            ax[a].axis('off')
+            ax[a].set_title('#' + str(imgs[a]))
+            ax[a].set_xlabel(str(imgs[a]))
+
+        subfigs[1].suptitle('Estimated')
+        ax = subfigs[1].subplots(nrows=1, ncols=8)
+        for a in range(len(ax)):
+            ax[a].imshow(self.estimates[imgs[a]])
+            ax[a].axis('off')
+            ax[a].set_title('#' + str(imgs[a]))
+            ax[a].set_xlabel(str(imgs[a]))
+
         plt.show()
