@@ -140,14 +140,6 @@ class TrainerTeacherStudent:
                      'groundtruth': []}
         return test_loss
 
-    def save_status(self, model=None, notion=''):
-        if model is None:
-            model = ['img_encoder, img_decoder, csi_encoder']
-        for mo in model:
-            torch.save(eval('self.' + mo + '.state_dict()'),
-                       '../Models/' + mo + '_' + str(self.img_encoder) + notion +
-                       '_ep' + str(self.teacher_epochs) + '.pth')
-
     def train_teacher(self, autosave=False, notion=''):
         start = time.time()
 
@@ -250,7 +242,7 @@ class TrainerTeacherStudent:
 
         if autosave is True:
             torch.save(self.csi_encoder.state_dict(),
-                       '../Models/CsiEn_' + str(self.csi_encoder) + notion + '_tep' + str(self.teacher_epochs) + 
+                       '../Models/CsiEn_' + str(self.csi_encoder) + notion + '_tep' + str(self.teacher_epochs) +
                        '_sep' + str(self.student_epochs) + '.pth')
 
         # =====================valid============================
@@ -563,7 +555,7 @@ class TrainerTeacherStudent:
 
     def save_all_params(self, notion=''):
         save_path = '../Models/'
-        
+
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
@@ -571,8 +563,7 @@ class TrainerTeacherStudent:
                    '../Models/ImgEn_' + str(self.img_encoder) + notion + '_tep' + str(self.teacher_epochs) + '.pth')
         torch.save(self.img_decoder.state_dict(),
                    '../Models/ImgDe_' + str(self.img_decoder) + notion + '_tep' + str(self.teacher_epochs) + '.pth')
-        
+
         torch.save(self.csi_encoder.state_dict(),
-                   '../Models/CsiEn_' + str(self.csi_encoder) + notion + '_tep' + str(self.teacher_epochs) +
+                   '../Models/CSIEn_' + str(self.csi_encoder) + notion + '_tep' + str(self.teacher_epochs) +
                    '_sep' + str(self.student_epochs) + '.pth')
-        
