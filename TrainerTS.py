@@ -7,6 +7,32 @@ import time
 import os
 
 
+def bn(channels, batchnorm):
+    if batchnorm:
+        return nn.BatchNorm2d(channels)
+    else:
+        return nn.Identity(channels)
+
+
+def activefunc(normalized=False):
+    if normalized:
+        return nn.Sigmoid()
+    else:
+        return nn.LeakyReLU(inplace=True)
+
+
+class Interpolate(nn.Module):
+    def __init__(self, size, mode='bilinear'):
+        super(Interpolate, self).__init__()
+        self.interp = nn.functional.interpolate
+        self.size = size
+        self.mode = mode
+
+    def forward(self, x):
+        x = self.interp(x, size=self.size, mode=self.mode, align_corners=False)
+        return x
+
+
 class MyDataset(Data.Dataset):
     def __init__(self, x_path, y_path, number=0):
         self.seeds = None
@@ -422,18 +448,18 @@ class TrainerTeacherStudent:
                         "_s_valid" + notion + '_' + '.jpg')
         plt.show()
 
-    def plot_teacher_test(self, autosave=False, notion=''):
+    def plot_teacher_test(self, select_num=8, autosave=False, notion=''):
         self.__plot_settings__()
 
         # Depth Images
-        imgs = np.random.choice(list(range(len(self.t_test_loss['groundtruth']))), 8)
+        imgs = np.random.choice(list(range(len(self.t_test_loss['groundtruth']))), select_num, replace=False)
         imgs = np.sort(imgs)
         fig = plt.figure(constrained_layout=True)
         fig.suptitle('Teacher Test Results')
         subfigs = fig.subfigures(nrows=2, ncols=1)
 
         subfigs[0].suptitle('Ground Truth')
-        ax = subfigs[0].subplots(nrows=1, ncols=8)
+        ax = subfigs[0].subplots(nrows=1, ncols=select_num)
         for a in range(len(ax)):
             ima = ax[a].imshow(self.t_test_loss['groundtruth'][imgs[a]])
             ax[a].axis('off')
@@ -442,7 +468,7 @@ class TrainerTeacherStudent:
         subfigs[0].colorbar(ima, ax=ax, shrink=0.8)
 
         subfigs[1].suptitle('Estimated')
-        ax = subfigs[1].subplots(nrows=1, ncols=8)
+        ax = subfigs[1].subplots(nrows=1, ncols=select_num)
         for a in range(len(ax)):
             imb = ax[a].imshow(self.t_test_loss['predicts'][imgs[a]])
             ax[a].axis('off')
