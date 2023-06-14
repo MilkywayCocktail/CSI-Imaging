@@ -156,7 +156,7 @@ class TrainerVariationalTS(TrainerTeacherStudent):
             self.t_test_loss['groundtruth'].append(data_y.cpu().detach().numpy().squeeze().tolist())
 
             if idx % (len(self.test_loader)//5) == 0:
-                print("\rTeacher: {}/{}of test, loss={}".format(idx, len(self.test_loader), loss.item()), end='')
+                print("\rTeacher: {}/{}of test, loss={}".format(idx, len(loader), loss.item()), end='')
 
     def plot_teacher_loss(self, autosave=False, notion=''):
         self.__plot_settings__()
@@ -193,18 +193,18 @@ class TrainerVariationalTS(TrainerTeacherStudent):
                         "_t_train" + notion + '_' + '.jpg')
         plt.show()
 
-    def plot_teacher_test(self, autosave=False, notion=''):
+    def plot_teacher_test(self, select_num=8, autosave=False, notion=''):
         self.__plot_settings__()
 
         # Depth Images
-        imgs = np.random.choice(list(range(len(self.t_test_loss['groundtruth']))), 8)
+        imgs = np.random.choice(list(range(len(self.t_test_loss['groundtruth']))), select_num, replace=False)
         imgs = np.sort(imgs)
         fig = plt.figure(constrained_layout=True)
         fig.suptitle('Teacher Test Results')
         subfigs = fig.subfigures(nrows=2, ncols=1)
 
         subfigs[0].suptitle('Ground Truth')
-        ax = subfigs[0].subplots(nrows=1, ncols=8)
+        ax = subfigs[0].subplots(nrows=1, ncols=select_num)
         for a in range(len(ax)):
             ima = ax[a].imshow(self.t_test_loss['groundtruth'][imgs[a]])
             ax[a].axis('off')
@@ -213,7 +213,7 @@ class TrainerVariationalTS(TrainerTeacherStudent):
         subfigs[0].colorbar(ima, ax=ax, shrink=0.8)
 
         subfigs[1].suptitle('Estimated')
-        ax = subfigs[1].subplots(nrows=1, ncols=8)
+        ax = subfigs[1].subplots(nrows=1, ncols=select_num)
         for a in range(len(ax)):
             imb = ax[a].imshow(self.t_test_loss['predicts'][imgs[a]])
             ax[a].axis('off')
